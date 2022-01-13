@@ -1,0 +1,68 @@
+"""
+a, b, c, d, e, f, g
+
+1. shallow sort - check the file size and put in list of array
+2. compare line by line in each bucket until the end of the file
+3. print the duplicated files
+"""
+import os
+import itertools
+import pathlib
+from posixpath import abspath
+
+
+class Comaprator:
+
+    @staticmethod
+    def _find_path_with_folder(abs_path):
+        p = pathlib.Path(abs_path)
+        p.iterdir()
+        a = []
+        [a.append(x) for x in p.iterdir() if x.is_dir()]
+        return a
+
+    @staticmethod
+    def _sort_shallow(dir_path):
+        sizes_list = {}
+        files_list = Comaprator._find_path_with_folder(dir_path)
+        for file_path in files_list:
+            file_path = os.path.join(dir_path, file_path)
+            file_size = os.path.getsize(file_path)
+            if file_size in sizes_list.keys():
+                sizes_list[file_size].append(file_path)
+            else:
+                sizes_list[file_size] = [file_path]
+        return sizes_list
+
+    @staticmethod
+    def _compare_bucket_files(files_bucket: list):
+        result_bucket = []  # [{1, 3, 2}, {5}]
+        for file_1, file_2 in itertools.combinations(files_bucket, 2):
+            with open(file_1) as f1, open(file_2) as f2:
+                files_equals = True
+                for line1, line2 in zip(f1, f2):
+                    if line1 != line2:
+                        files_equals = False
+                        break
+                if files_equals:
+                    if result_bucket:
+                        for result in result_bucket:
+                            if file_1 in result or file_2 in result:
+                                result.add(file_1)
+                                result.add(file_2)
+                            else:
+                                result_bucket.append({file_1, file_2})
+                    else:
+                        result_bucket.append({file_1, file_2})
+        if result_bucket:
+            print("Duplicate files: ", str(result_bucket)[2:-2])
+
+    @classmethod
+    def compare(cls, dir_path):
+        a = []
+        sizes_list = cls._sort_shallow(dir_path)
+        for files_size in sizes_list.keys():
+            cls._compare_bucket_files(sizes_list[files_size])
+
+
+Comaprator.compare("./testfolder")
